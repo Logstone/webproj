@@ -27,11 +27,8 @@ function morse(str){
 	return array;
 }
 
-setInterval(function(){
 	var str = prompt();
 	navigator.vibrate(str);
-	
-}, 100000);
 
 navigator.vibrate(morse('... --- ...'));
 
