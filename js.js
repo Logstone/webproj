@@ -1,0 +1,209 @@
+var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+navigator.getUserMedia = navigator.getUserMedia ||
+                         navigator.webkitGetUserMedia ||
+                         navigator.mozGetUserMedia;
+
+navigator.getBattery().then(function(battery){
+	console.log(battery.charging);
+});
+
+var channels = 2;
+var second = 22050;
+var frameCount = second;
+var hz = 256;
+
+var myAudioBuffer = audioCtx.createBuffer(channels, frameCount, audioCtx.sampleRate);
+
+var timestamp = 0;
+
+window.onkeydown = function(event) {
+
+	if (timestamp > Date.now() + (frameCount/second * 1000))
+		return;
+
+	timestamp = Date.now();
+
+	note = Math.abs(event.keyCode - 48*2);
+	hz = Math.floor(Math.pow(2, (note-49)/12)*440);
+
+	var wave = [];
+	var length = Math.floor(second/hz);
+
+	for (var i = 0; i < length; i++)
+		wave[i] = getAmplitudeAt(1 / length * i);
+
+	for (var channel = 0; channel < channels; channel++) {
+		var nowBuffering = myAudioBuffer.getChannelData(channel);
+	   	for (var i = 0; i < frameCount; i++) {
+	   		var percent = 1 / frameCount * i;
+	    	nowBuffering[i] = wave[i % hz] * (Math.random() * .5 + .5);
+	   	}
+	}
+
+	var source = audioCtx.createBufferSource();
+	source.buffer = myAudioBuffer;
+	source.connect(audioCtx.destination);
+	source.start();
+}
+
+var canvas = document.getElementById('canvas');
+var ctx = canvas.getContext('2d');
+
+var center = {x: 0, y: 0};
+
+var setSize = function(){
+	canvas.style.display = 'block';
+	canvas.width = window.innerWidth;
+	canvas.height = window.innerHeight;
+
+	ctx.lineWidth = 0.005 * (canvas.width + canvas.height) / 2;
+	unit = canvas.width/(numUnits-1);
+	draw();
+}
+
+window.onresize = setSize;
+window.onload = setSize;
+
+var nodes = [[0, 0], [1, 0]];
+var numUnits = 50;
+var unit = 0;
+
+function draw(){
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+	ctx.strokeStyle = 'rgba(0, 0, 0, 1)'
+	ctx.beginPath();
+	ctx.moveTo(0, canvas.height/2);
+	ctx.lineTo(canvas.width, canvas.height/2);
+	ctx.stroke();
+
+	for (var i = 0; i <= numUnits; i++){
+		var x = unit * i; 
+		var y = canvas.height / 2;
+
+		ctx.beginPath();
+		ctx.moveTo(x, y - unit / 2);
+		ctx.lineTo(x, y + unit / 2);
+		ctx.stroke();
+	}
+
+	ctx.beginPath();
+
+	var nodesOrdered = nodes.slice(0);
+	nodesOrdered.sort();
+
+	for (var x = 0; x < window.innerWidth; x++){
+		var pixel = 1 / window.innerWidth;
+		var y = (getAmplitudeAt(pixel * x) + 1) / 2 * window.innerHeight;
+
+		ctx.lineTo(x, y);
+	}
+
+	ctx.strokeStyle = 'rgba(150, 0, 0, 1)';
+	ctx.stroke();
+
+	ctx.fillStyle = 'rgba(100, 0, 0, 1)';
+
+	for (var i = 0; i < nodes.length; i++){
+		var node = nodes[i];
+		if (node[2] == 1)
+			continue;
+
+		var x = window.innerWidth * node[0];
+		var y = window.innerHeight * (node[1]/2 +.5);
+
+		ctx.beginPath();
+		ctx.arc(x, y, unit/4, 0, 2 * Math.PI);
+		ctx.fill();
+		ctx.stroke();
+	}
+}
+
+function getAmplitudeAt(percent){
+	var nodesOrdered = nodes.slice(0);
+	nodesOrdered.sort();
+
+	for (var i = 0; i < nodesOrdered.length - 1; i++){
+		var nodeA = nodesOrdered[i];
+		var nodeB = nodesOrdered[i+1];
+
+		if (nodeA[0] <= percent && nodeB[0] >= percent){
+			var p = (percent - nodeA[0])/(nodeB[0]-nodeA[0]);
+			return getWaveAt(nodeA[1], nodeB[1], p);
+		}
+	}
+}
+
+function getWaveAt(heightA, heightB, percent){
+	var delta = - ((heightB - heightA) / 2);
+	return Math.cos(percent * Math.PI) * delta + (delta + heightB);
+}
+
+var selectedNode = null;
+var action = null;
+
+window.onmousedown = function(event){
+	var x = event.clientX / window.innerWidth;
+	var y = (event.clientY / window.innerHeight - .5) * 2;
+	var node = getNodesAt(x, y);
+
+	if (node == -1 && event.button == 0){
+		nodes.push([x, y]);
+		node = nodes.length-1;
+	}
+
+	if (node != -1 && nodes[node][2] != 1){
+		selectedNode = node;
+		action = event.button;
+		draw();
+	}
+	
+}
+
+function getNodesAt(x, y){
+	var index = -1;
+	var distance = -1;
+
+	for (var i = 0; i < nodes.length; i++){
+		var deltaX = Math.abs(nodes[i][0] * window.innerWidth - x * window.innerWidth);
+		var deltaY = Math.abs(nodes[i][1] * window.innerHeight - y * window.innerHeight);
+		var delta = Math.sqrt(deltaX*deltaX + deltaY*deltaY);
+
+		if (delta <= unit/2 && (delta < distance || distance == -1)){
+			distance = delta;
+			index = i;
+		}
+	}
+
+	return index;
+}
+
+window.onmouseup = function(event){
+	if (action == 2 && nodes[selectedNode][2] != 1){
+		nodes.splice(selectedNode, 1);
+	}
+	selectedNode = null;
+	draw();
+}
+
+window.onmousemove = function(event){
+	if (selectedNode == null || action != 0)
+		return;
+
+	var x = event.clientX / window.innerWidth;
+	var y = (event.clientY / window.innerHeight -.5) * 2;
+
+	x = x <= 0 ? 0 : x;
+	x = x >= 1 ? 1 : x;
+	y = y <= -1 ? -1 : y;
+	y = y >= 1 ? 1 : y;
+
+	nodes[selectedNode] = [x, y];
+
+	draw();
+}
+
+window.oncontextmenu = function(){
+	return false;
+}
