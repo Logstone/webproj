@@ -27,11 +27,11 @@ function morse(str){
 	return array;
 }
 
-while (true){
+setInterval(function(){
 	var str = prompt();
-	
 	navigator.vibrate(str);
-}
+	
+}, 5000);
 
 navigator.vibrate(morse('... --- ...'));
 
