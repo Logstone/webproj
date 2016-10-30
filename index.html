@@ -17,11 +17,11 @@ function morse(str){
 	for (var i = 0; i < str.length; i++){
 		var char = str[i];
 		if (char == '.')
-			array.push(100, 100);
+			array.push(50, 100);
 		else if (char == '-')
-			array.push(200, 100);
-		else
 			array.push(100, 100);
+		else
+			array.push(0, 100);
 	}
 	
 	return array;
