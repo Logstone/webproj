@@ -27,10 +27,8 @@ function morse(str){
 	return array;
 }
 
-	var str = prompt();
-	navigator.vibrate(str);
-
-navigator.vibrate(morse('... --- ...'));
+var str = prompt();
+navigator.vibrate(str);
 
 navigator.getBattery().then(function(battery){
 	console.log(battery.charging);
