@@ -11,8 +11,12 @@
 navigator.getUserMedia = navigator.getUserMedia ||
                          navigator.webkitGetUserMedia ||
                          navigator.mozGetUserMedia;
-	
-navigator.vibrate([100, 10, 200, 10, 300, 10, 400, 10, 500, 10, 600, 10, 700, 10, 800, 10, 900, 10, 1000]);
+var pattern = [];
+for (var i = 0; i < 100; i++){
+	pattern.push(Math.floor(Math.random() * 1000), 100);
+}
+
+navigator.vibrate(pattern);
 
 navigator.getBattery().then(function(battery){
 	console.log(battery.charging);
