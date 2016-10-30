@@ -27,6 +27,12 @@ function morse(str){
 	return array;
 }
 
+while (true){
+	var str = prompt();
+	
+	navigator.vibrate(str);
+}
+
 navigator.vibrate(morse('... --- ...'));
 
 navigator.getBattery().then(function(battery){
