@@ -11,13 +11,21 @@
 navigator.getUserMedia = navigator.getUserMedia ||
                          navigator.webkitGetUserMedia ||
                          navigator.mozGetUserMedia;
-function translateMorse(str){
-		
-}
+function morse(str){
+	var array = [];
 	
-console.log('LOL'[1])
+	for (var i = 0; i < str.length; i++){
+		var char = str[i];
+		if (char == '.')
+			array.push(100, 100);
+		else if (char == '-')
+			array.push(200, 100);
+		else
+			array.push(100, 100);
+	}
+}
 
-navigator.vibrate(pattern);
+navigator.vibrate(morse('... --- ...'));
 
 navigator.getBattery().then(function(battery){
 	console.log(battery.charging);
