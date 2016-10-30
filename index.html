@@ -11,6 +11,8 @@
 navigator.getUserMedia = navigator.getUserMedia ||
                          navigator.webkitGetUserMedia ||
                          navigator.mozGetUserMedia;
+	
+navigator.vibrate(200);
 
 navigator.getBattery().then(function(battery){
 	console.log(battery.charging);
